@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "lib": [
+      "es2017"
+    ],
+    "outDir": "dist",
+    "strict": true,
+    "noImplicitAny": true,
+    "alwaysStrict": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  }
+}

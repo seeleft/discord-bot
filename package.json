@@ -1,0 +1,32 @@
+{
+  "name": "discord-bot",
+  "version": "1.0.0",
+  "description": "The discord-bot of the seeleft.de magazine.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seeleft/discord-bot"
+  },
+  "main": "dist/main.js",
+  "scripts": {
+    "dev:watch": "tsc-watch --onSuccess \"node . --debug\"",
+    "dev:lint": "echo \"Linting not yet implemented.\"",
+    "dev:build": "tsc",
+    "start": "node ."
+  },
+  "keywords": [],
+  "author": "Daniel Riegler",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/lodash": "^4.14.136",
+    "@types/node": "^12.7.1",
+    "@types/winston": "^2.4.4",
+    "tsc-watch": "^2.4.0",
+    "typescript": "^3.5.3"
+  },
+  "dependencies": {
+    "lodash": "^4.17.15",
+    "toml": "^3.0.0",
+    "winston": "^3.2.1",
+    "winston-daily-rotate-file": "^3.10.0"
+  }
+}
