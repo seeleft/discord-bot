@@ -1,0 +1,13 @@
+# Third-party services
+[services]
+
+    # Discord settings
+    [services.discord]
+
+        # Authentication token for the discord bot
+        # Get one at: https://discordapp.com/developers/applications/
+        bot-token = 'YOUR_BOT_TOKEN'
+
+        # Home guild id of the bot
+        # The bot will leave all other guilds on login
+        home-guild = '600328651124506625'
