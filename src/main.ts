@@ -24,8 +24,8 @@
 import Toml from 'toml'
 import Lodash from 'lodash'
 import moment from 'moment'
-import FileSystem from 'fs'
-import { Client } from 'discord.js'
+import FileSystem, { PathLike } from 'fs'
+import { Client, Guild } from 'discord.js'
 import DailyRotateFile from 'winston-daily-rotate-file'
 import Winston, { Logger, transports, format } from 'winston'
 import IEventListener from './events/IEventListener'
@@ -51,13 +51,6 @@ Lodash.filter(process.argv).
         }
     })
 
-// parse config
-export let config: any = Toml.parse(FileSystem.readFileSync('./config.toml', 'UTF-8'))
-
-// parse debug config (config.debug.toml) if such a file exists
-if (FileSystem.existsSync('./config.debug.toml'))
-    config = Lodash.merge(config, Toml.parse(FileSystem.readFileSync('./config.debug.toml', 'UTF-8')))
-
 // setup logger
 export const Log: Logger = Winston.createLogger({
     exitOnError: !argv.get('debug'),
@@ -81,15 +74,28 @@ if (!argv.get('no-file-log')) {
         maxSize: '20m',
         maxFiles: '7d'
     }))
-} else Log.debug('Writing no log-files...')
+} else Log.debug('Writing no log-files.')
 
 if (argv.get('debug'))
     Log.warn('Running in debug-mode; REMOVE PARAMETER \'--debug\' IN PRODUCTION!')
 
+// parse config
+export let config: any = Toml.parse(FileSystem.readFileSync('./config.toml', 'UTF-8'))
+Log.debug(`Parsed config.`)
+
+// parse debug config (config.debug.toml) if such a file exists
+const debugConfig: PathLike = './config.debug.toml'
+if (FileSystem.existsSync(debugConfig)) {
+    config = Lodash.merge(config, Toml.parse(FileSystem.readFileSync(debugConfig, 'UTF-8')))
+    Log.debug(`Found and parsed '${debugConfig}' and appended values to existing config.`)
+}
+
 // setup discord client
 export const client: Client = new Client()
+Log.debug(`Created discord client.`)
 
 // register listener
+Log.debug('Hooking listener...')
 new Array<IEventListener<any>>(
     new MessageEventListenerImpl()
 ).forEach(listener => {
@@ -98,20 +104,26 @@ new Array<IEventListener<any>>(
     Log.debug(`Hooked listener to '${name}'-event.`)
 })
 
-// login to discord
-client.login(config.services.discord['bot-token']).then(() => {
-    Log.info(`Bot logged in as ${client.user.tag}.`)
+let homeGuild: Guild
 
-    const homeGuild: string = config.services.discord['home-guild']
-    Log.debug(`Home-guild should be: ${homeGuild}`)
+// login to discord
+Log.debug('Logging into discord...')
+client.login(config.services.discord['bot-token']).then(() => {
+    Log.info(`Bot logged in as @${client.user.tag}.`)
+
+    const homeGuildId: string = config.services.discord['home-guild']
+    Log.debug(`Trying to find home-guild with id ${homeGuildId}...`)
 
     // match guilds against home-guild
     client.guilds.forEach(guild => {
-        if (homeGuild !== guild.id) {
+        if (homeGuildId !== guild.id) {
             Log.warn(`Guild with ID: ${guild.id} doesn't match home-guild, leaving now...`)
             guild.leave().
                 then(() => Log.debug(`Successfully left guild with ID: ${guild.id}`)).
                 catch(error => Log.warn(`Could not leave guild with ID: ${guild.id}: ${error.message}`))
-        } else Log.debug(`Found home-guild (${guild.name}).`)
+        } else {
+            Log.debug(`Found home-guild: ${guild.name})`)
+            homeGuild = guild
+        }
     })
 })

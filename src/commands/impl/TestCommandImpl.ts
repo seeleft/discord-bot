@@ -21,26 +21,17 @@
  * SOFTWARE.
  */
 
-import IEventListener from '../IEventListener'
-import { Message } from 'discord.js'
-import { Log } from '../../main'
+import AbstractCommand, { CommandExecutor, CommandMeta } from '../Command'
 
-export default class MessageEventListenerImpl implements IEventListener<Message> {
+export default class TestCommandImpl extends AbstractCommand {
 
-    name = (): string => 'message'
+    constructor() {
+        super(new CommandMeta(new Array<string>('test')))
+    }
 
-    run(result: Message): void {
-        // stop if author of the message is a bot
-        if (result.author.bot) {
-            Log.debug(`Ignored message from bot ${result.author.tag} in #${result.channel.id}.`)
-            return
-        }
-        // stop if message was sent in no text channel
-        if ('text' !== result.channel.type) {
-            Log.debug(`Ignored message from ${result.author.tag} in ${result.channel.type}-channel #${result.channel.id}.`)
-            return
-        }
-
+    execute(executor: CommandExecutor, args: Array<string>): boolean {
+        executor.channel().sendMessage(`It works ${executor.user().tag}!`)
+        return true
     }
 
 }
