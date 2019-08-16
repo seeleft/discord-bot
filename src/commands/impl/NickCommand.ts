@@ -22,6 +22,9 @@
  */
 
 import AbstractCommand, {CommandExecutor, CommandMeta} from '../Command'
+import {GuildMember} from 'discord.js'
+import MessageUtil from '../../util/MessageUtil'
+import {botMember} from '../../main'
 
 export default class NickCommand extends AbstractCommand {
 
@@ -30,8 +33,40 @@ export default class NickCommand extends AbstractCommand {
     }
 
     execute = (executor: CommandExecutor, args: Array<string>): boolean => {
-        // todo implement command logic
-        return false
+        // check argument length
+        if (1 > args.length)
+            return false
+
+        // check if target is a member
+        if (args[0].startsWith('@')) {
+            // pick first member mention
+            const member: GuildMember = executor.mentions().members.first()
+            // check if member is actually available
+            if (!member)
+                return false
+            // extract the nickname from the array
+            args.shift()
+            const name: string = args.join(' ')
+            // update the member's nickname
+            member.setNickname(name)
+                .then(() => MessageUtil.reply(executor, `Du hast den Nickname von <@${member.id}> zu \`${name}\` geändert.`))
+                .catch(error => MessageUtil.reply(executor, `Konnte den Nickname von <@${member.id}> nicht verändern: ${error.message}`))
+            return true
+        }
+
+        // check if executor has administrative permissions
+        if (!executor.member().hasPermission('ADMINISTRATOR')) {
+            MessageUtil.reply(executor, 'Du bist kein Administrator. ¯\\_(ツ)_/¯')
+            return true
+        }
+
+        // extract the nickname from the array
+        const name: string = args.join(' ')
+        // update the bot's nickname
+        botMember.setNickname(name)
+            .then(() => MessageUtil.reply(executor, `Du hast den Nickname vom Bot zu \`${name}\` geändert.`))
+            .catch(error => MessageUtil.reply(executor, `Konnte den Nickname vom Bot nicht verändern: ${error.message}`))
+        return true
     }
 
 }

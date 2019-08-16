@@ -21,34 +21,36 @@
  * SOFTWARE.
  */
 
-import {Message, RichEmbed, TextChannel, User} from 'discord.js'
-import {client, config, Log} from '../main'
-import {CommandExecutor} from '../commands/Command'
+import {GuildMember} from 'discord.js'
 
-export default class MessageUtil {
+export abstract class AbstractAction {
 
-    // prevent instantiaton
-    private constructor() {
+    abstract name(): string
+
+    private readonly _issued: Date
+
+    protected constructor(issued: Date) {
+        this._issued = issued
     }
 
-    static sendToOwner = (message: string | RichEmbed): void => {
-        const owners: Array<string> = config.services.discord.owner
-        owners.forEach(owner => client.fetchUser(owner)
-            .then(user => user.send(message))
-            .catch(error => Log.warn(`Could not fetch user with ID: ${owner}: ${error.message}`)))
+    issued = (): Date => this._issued
+
+}
+
+export default class Member {
+
+    private readonly _id: string
+
+    // noinspection JSMismatchedCollectionQueryUpdate
+    private readonly _actions: Array<AbstractAction>
+
+    constructor(member: GuildMember) {
+        this._id = member.id
+        this._actions = new Array<AbstractAction>()
     }
 
-    static reply = (target: CommandExecutor | Message, message: string | RichEmbed): void => {
-        const channel: TextChannel = (target instanceof CommandExecutor ? target.channel() : target.channel) as TextChannel
-        const user: User = (target instanceof CommandExecutor ? target.user() : target.author)
-        switch (typeof message) {
-            case 'string':
-                channel.send(`<@${user.id}>\n${message}`)
-                break
-            case 'object':
-                channel.send(message)
-                break
-        }
-    }
+    id = (): string => this._id
+
+    actions = (): Array<AbstractAction> => this._actions
 
 }

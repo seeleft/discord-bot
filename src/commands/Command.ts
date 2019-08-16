@@ -83,7 +83,7 @@ export class CommandMeta {
 
 export class CommandHandler {
 
-    private static readonly TAG: string = `[${Path.basename(__dirname)}/${Path.basename(__filename)}]`
+    private static readonly TAG: string = `[${Path.join(Path.relative('.', __dirname), Path.basename(__filename))}]`
 
     private readonly $commands: Array<AbstractCommand>
 

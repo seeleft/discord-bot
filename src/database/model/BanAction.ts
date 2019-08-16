@@ -21,34 +21,34 @@
  * SOFTWARE.
  */
 
-import {Message, RichEmbed, TextChannel, User} from 'discord.js'
-import {client, config, Log} from '../main'
-import {CommandExecutor} from '../commands/Command'
+import {AbstractAction} from './Member'
+import {BanOptions} from 'discord.js'
 
-export default class MessageUtil {
+// noinspection JSUnusedGlobalSymbols
+export default class BanAction extends AbstractAction {
 
-    // prevent instantiaton
-    private constructor() {
+    private readonly _target: string
+
+    private readonly _reason: string
+
+    private readonly _days: number
+
+    constructor(target: string, options: BanOptions) {
+        super(new Date())
+        this._target = target
+        this._days = options.days || 0
+        this._reason = options.reason || ''
     }
 
-    static sendToOwner = (message: string | RichEmbed): void => {
-        const owners: Array<string> = config.services.discord.owner
-        owners.forEach(owner => client.fetchUser(owner)
-            .then(user => user.send(message))
-            .catch(error => Log.warn(`Could not fetch user with ID: ${owner}: ${error.message}`)))
-    }
+    name = (): string => 'ban'
 
-    static reply = (target: CommandExecutor | Message, message: string | RichEmbed): void => {
-        const channel: TextChannel = (target instanceof CommandExecutor ? target.channel() : target.channel) as TextChannel
-        const user: User = (target instanceof CommandExecutor ? target.user() : target.author)
-        switch (typeof message) {
-            case 'string':
-                channel.send(`<@${user.id}>\n${message}`)
-                break
-            case 'object':
-                channel.send(message)
-                break
-        }
-    }
+    // noinspection JSUnusedGlobalSymbols
+    target = (): string => this._target
+
+    // noinspection JSUnusedGlobalSymbols
+    reason = (): string => this._reason
+
+    // noinspection JSUnusedGlobalSymbols
+    days = (): number => this._days
 
 }

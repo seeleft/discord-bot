@@ -25,6 +25,7 @@ import Toml from 'toml'
 import Path from 'path'
 import Lodash from 'lodash'
 import moment from 'moment'
+import exitHook from 'exit-hook'
 import FileSystem, {PathLike} from 'fs'
 import {Client, Guild, GuildMember} from 'discord.js'
 import DailyRotateFile from 'winston-daily-rotate-file'
@@ -37,8 +38,9 @@ import PurgeCommand from './commands/impl/PurgeCommand'
 import KickCommand from './commands/impl/KickCommand'
 import NickCommand from './commands/impl/NickCommand'
 import InviteCommand from './commands/impl/InviteCommand'
+import {DatabaseProvider, IDatabase} from './database/Database'
 
-const TAG: string = `[${Path.basename(__dirname)}/${Path.basename(__filename)}]`
+const TAG: string = `[${Path.join(Path.relative('.', __dirname), Path.basename(__filename))}]`
 
 export const argv: Map<string, any> = new Map()
 
@@ -137,29 +139,37 @@ new Array<IEventListener<any>>(
 
 export let
     homeGuild: Guild,
-    botMember: GuildMember
+    botMember: GuildMember,
+    database: IDatabase
 
-// login to discord
-Log.debug(`${TAG} Logging into discord...`)
-client.login(config.services.discord['bot-token']).then(() => {
-    Log.info(`${TAG} Bot logged in as ${client.user.tag}.`)
+const databaseSettings: any = config.services.database
+DatabaseProvider.new(databaseSettings.type, databaseSettings.uri, databaseSettings.options).then($database => {
+    database = $database
+    // close database on exit
+    exitHook(database.close)
+    // login to discord
+    Log.debug(`${TAG} Logging into discord...`)
+    client.login(config.services.discord['bot-token']).then(() => {
+        Log.info(`${TAG} Bot logged in as ${client.user.tag}.`)
 
-    // extract home-guild from config
-    const homeGuildId: string = config.services.discord['home-guild']
-    Log.debug(`${TAG} Trying to find home-guild with id ${homeGuildId}...`)
+        // extract home-guild from config
+        const homeGuildId: string = config.services.discord['home-guild']
+        Log.debug(`${TAG} Trying to find home-guild with id ${homeGuildId}...`)
 
-    // match guilds against home-guild
-    client.guilds.forEach(guild => {
-        if (homeGuildId !== guild.id) {
-            Log.warn(`${TAG} Guild with ID: ${guild.id} doesn't match home-guild, leaving now...`)
-            guild.leave().then(() => Log.debug(`${TAG} Successfully left guild with ID: ${guild.id}`)).catch(error => Log.warn(`${TAG} Could not leave guild with ID: ${guild.id}: ${error.message}`))
-        } else {
-            Log.debug(`${TAG} Found home-guild: ${guild.name}`)
-            homeGuild = guild
-        }
-    })
+        // match guilds against home-guild
+        client.guilds.forEach(guild => {
+            if (homeGuildId !== guild.id) {
+                Log.warn(`${TAG} Guild with ID: ${guild.id} doesn't match home-guild, leaving now...`)
+                guild.leave().then(() => Log.debug(`${TAG} Successfully left guild with ID: ${guild.id}`)).catch(error => Log.warn(`${TAG} Could not leave guild with ID: ${guild.id}: ${error.message}`))
+            } else {
+                Log.debug(`${TAG} Found home-guild: ${guild.name}`)
+                homeGuild = guild
+            }
+        })
 
-    // extract guild-member of the bot
-    botMember = homeGuild.member(client.user)
+        // extract guild-member of the bot
+        botMember = homeGuild.member(client.user)
 
-})
+        Log.info(`${TAG} Bot is now ready!`)
+    }).catch(error => Log.error(`Could not login to discord: ${error.message}`))
+}).catch(error => Log.error(`Could not connect to database: ${error.message}`))

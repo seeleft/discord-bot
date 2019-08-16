@@ -19,6 +19,20 @@
         # Note: in debug mode the bot will only listen to the users defined below
         owner = ['319083113235873793', '561134116716806155']
 
+    # Database settings
+    [services.database]
+
+        # Type of the database
+        # Currently available: mongodb
+        type = ''
+
+        # Database connection uri
+        uri = ''
+
+        # Database options
+        options = {}
+
+
 # General settings
 [settings]
     

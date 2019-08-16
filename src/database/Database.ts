@@ -21,34 +21,32 @@
  * SOFTWARE.
  */
 
-import {Message, RichEmbed, TextChannel, User} from 'discord.js'
-import {client, config, Log} from '../main'
-import {CommandExecutor} from '../commands/Command'
+import Member from './model/Member'
+import MongoDatabase from './impl/MongoDatabase'
 
-export default class MessageUtil {
+export interface IDatabase {
 
+    connect(uri: string, options: any): Promise<IDatabase>
+
+    get(id: string): Promise<Member>
+
+    save(member: Member): Promise<Member>
+
+    close(): void
+
+}
+
+export class DatabaseProvider {
     // prevent instantiaton
     private constructor() {
     }
 
-    static sendToOwner = (message: string | RichEmbed): void => {
-        const owners: Array<string> = config.services.discord.owner
-        owners.forEach(owner => client.fetchUser(owner)
-            .then(user => user.send(message))
-            .catch(error => Log.warn(`Could not fetch user with ID: ${owner}: ${error.message}`)))
-    }
-
-    static reply = (target: CommandExecutor | Message, message: string | RichEmbed): void => {
-        const channel: TextChannel = (target instanceof CommandExecutor ? target.channel() : target.channel) as TextChannel
-        const user: User = (target instanceof CommandExecutor ? target.user() : target.author)
-        switch (typeof message) {
-            case 'string':
-                channel.send(`<@${user.id}>\n${message}`)
-                break
-            case 'object':
-                channel.send(message)
-                break
+    static new = (type: string, uri: string, options: any): Promise<IDatabase> => {
+        switch (type.toLowerCase()) {
+            case 'mongodb':
+                return new MongoDatabase().connect(uri, options)
+            default:
+                throw new Error(`Unknown database-type: ${type}`)
         }
     }
-
 }
