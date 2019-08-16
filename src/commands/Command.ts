@@ -25,6 +25,7 @@ import Path from 'path'
 import Lodash from 'lodash'
 import {GuildMember, Message, MessageMentions, PermissionString, TextChannel, User} from 'discord.js'
 import {Log} from '../main'
+import MessageUtil from '../util/MessageUtil'
 
 export class CommandExecutor {
 
@@ -116,18 +117,18 @@ export class CommandHandler {
         // check if no commands hit the query
         if (0 === hits.length)
         // command does not exist
-            message.channel.send(`<@${message.author.id}>\nIch konnte leider keinen Befehl mit dem Namen "${name}" finden.\nDu kannst versuchen mit \`${this.$prefix}help\` eine Liste aller verfügbaren Befehle zu listen.`)
+            MessageUtil.reply(message, `Ich konnte leider keinen Befehl mit dem Namen "${name}" finden.\nDu kannst versuchen mit \`${this.$prefix}help\` eine Liste aller verfügbaren Befehle zu listen.`)
         else {
             // extract first command from array
             const command: AbstractCommand = hits[0]
             // check for permissions
             if (!command.meta().permitted(message.member))
-                message.channel.send(`<@${message.author.id}>\nDieser Befehl ist höheren Rollen vorenthalten.`)
+                MessageUtil.reply(message, `Dir fehlt die Berechtigung \`${command.meta().permission()}\`.`)
             else {
                 const result: boolean = command.execute(new CommandExecutor(message), content)
                 // send usage on failure
                 if (!result)
-                    message.channel.send(`<@${message.author.id}>\nFalsche Verwendung. Beispiel: \`${this.$prefix}${name}${command.meta().usage() ? ` ${command.meta().usage()}` : ''}\``)
+                    MessageUtil.reply(message, `Falsche Verwendung. Beispiel: \`${this.$prefix}${name}${command.meta().usage() ? ` ${command.meta().usage()}` : ''}\``)
             }
         }
         return true

@@ -21,34 +21,17 @@
  * SOFTWARE.
  */
 
-import {Message, RichEmbed, TextChannel, User} from 'discord.js'
-import {argv, client, config, Log} from '../main'
-import {CommandExecutor} from '../commands/Command'
+import AbstractCommand, {CommandExecutor, CommandMeta} from '../Command'
 
-export default class MessageUtil {
+export default class NickCommand extends AbstractCommand {
 
-    // prevent instantiaton
-    private constructor() {
+    constructor() {
+        super(new CommandMeta(new Array<string>('nick'), 'MANAGE_NICKNAMES', 'Ändert den Nickname eines Users oder des Bots.', '[@user] <Nickname...>'))
     }
 
-    static sendToOwner = (message: string | RichEmbed): void => {
-        const owners: Array<string> = config.services.discord.owner
-        owners.forEach(owner => client.fetchUser(owner)
-            .then(user => user.send(message))
-            .catch(error => Log.warn(`Could not fetch user with ID: ${owner}: ${error.message}`)))
-    }
-
-    static reply = (target: CommandExecutor | Message, message: string | RichEmbed): void => {
-        const channel: TextChannel = (target instanceof CommandExecutor ? target.channel() : target.channel) as TextChannel
-        const user: User = (target instanceof CommandExecutor ? target.user() : target.author)
-        switch (typeof message) {
-            case 'string':
-                channel.send(`<@${user.id}>\n${message}`)
-                break
-            case 'object':
-                channel.send(message)
-                break
-        }
+    execute = (executor: CommandExecutor, args: Array<string>): boolean => {
+        // todo implement command logic
+        return false
     }
 
 }

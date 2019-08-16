@@ -29,7 +29,7 @@ import {config, homeGuild} from '../../main'
 export default class KickCommand extends AbstractCommand {
 
     constructor() {
-        super(new CommandMeta(new Array<string>('kick'), 'KICK_MEMBERS', 'Wirft einen User von der Guild.', '<@user> <Grund...>'))
+        super(new CommandMeta(new Array<string>('kick'), 'KICK_MEMBERS', 'Wirft einen User vom Discord.', '<@user> <Grund...>'))
     }
 
     execute = (executor: CommandExecutor, args: Array<string>): boolean => {

@@ -35,24 +35,40 @@ import AbstractCommand, {CommandHandler} from './commands/Command'
 import HelpCommand from './commands/impl/HelpCommand'
 import PurgeCommand from './commands/impl/PurgeCommand'
 import KickCommand from './commands/impl/KickCommand'
+import NickCommand from './commands/impl/NickCommand'
+import InviteCommand from './commands/impl/InviteCommand'
 
 const TAG: string = `[${Path.basename(__dirname)}/${Path.basename(__filename)}]`
 
 export const argv: Map<string, any> = new Map()
 
-// parse argv
-Lodash.filter(process.argv).map(arg => arg.trim()).filter(arg => arg.startsWith('--')).map(arg => arg.replace('--', '')).filter(arg => /[A-Z-=]/i.test(arg)).forEach(arg => {
-    if (!arg.includes('=') || arg.endsWith('='))
-        argv.set((arg.endsWith('=') ? arg.substring(arg.length - 1) : arg), true)
-    else {
-        const parts: Array<any> = arg.split('=', 1)
-        try {
-            parts[1] = JSON.parse(parts[1])
-        } catch (error) {
+// parse argv arguments
+Lodash.filter(process.argv)
+    // trim each argument
+    .map(arg => arg.trim())
+    // filter out arguments which don't start with "--"
+    .filter(arg => arg.startsWith('--'))
+    // remove the "--" prefix from the actual arguments
+    .map(arg => arg.replace('--', ''))
+    // match the arguments against an extended alphanumeric regex
+    .filter(arg => /[A-Z-=]/i.test(arg))
+    // parse the filtered arguments
+    .forEach(arg => {
+        // use boolean value TRUE for undefined values
+        if (!arg.includes('=') || arg.endsWith('='))
+            argv.set((arg.endsWith('=') ? arg.substring(arg.length - 1) : arg), true)
+        else {
+            // split the argument to key/value at every "="-sign
+            const parts: Array<any> = arg.split('=', 1)
+            // try to parse the argument to an object
+            try {
+                parts[1] = JSON.parse(parts[1])
+            } catch (error) {
+            }
+            // add the key/value-pair to the map
+            argv.set(parts[0], parts[1])
         }
-        argv.set(parts[0], parts[1])
-    }
-})
+    })
 
 // setup logger
 export const Log: Logger = Winston.createLogger({
@@ -89,6 +105,7 @@ Log.debug(`${TAG} Parsed config.`)
 // parse debug config (config.debug.toml) if such a file exists
 const debugConfig: PathLike = './config.debug.toml'
 if (FileSystem.existsSync(debugConfig)) {
+    // merge the debug configuration values to the existing one
     config = Lodash.merge(config, Toml.parse(FileSystem.readFileSync(debugConfig, 'UTF-8')))
     Log.debug(`${TAG} Found and parsed '${debugConfig}' and appended values to existing config.`)
 }
@@ -101,15 +118,19 @@ Log.debug(`${TAG} Created discord client.`)
 export const commandHandler: CommandHandler = new CommandHandler(new Array<AbstractCommand>(
     new PurgeCommand(),
     new KickCommand(),
-    new HelpCommand()
+    new NickCommand(),
+    new InviteCommand(),
+    new HelpCommand() // ALWAYS LEAVE THIS COMMAND LAST IN THE ARRAY
 ), config.settings.command.prefix)
+Log.debug(`${TAG} Registered ${commandHandler.commands().length} commands.`)
 
-// register listener
+// register
 Log.debug(`${TAG} Hooking listener...`)
 new Array<IEventListener<any>>(
     new MessageEventListenerImpl()
 ).forEach(listener => {
     const name: string = listener.name()
+    // hook the actual listener to the bot's event-system
     client.addListener(name, listener.run)
     Log.debug(`${TAG} Hooked listener to '${name}'-event.`)
 })
@@ -121,7 +142,7 @@ export let
 // login to discord
 Log.debug(`${TAG} Logging into discord...`)
 client.login(config.services.discord['bot-token']).then(() => {
-    Log.info(`${TAG} Bot logged in as @${client.user.tag}.`)
+    Log.info(`${TAG} Bot logged in as ${client.user.tag}.`)
 
     // extract home-guild from config
     const homeGuildId: string = config.services.discord['home-guild']

@@ -8,6 +8,9 @@
         # Get one at: https://discordapp.com/developers/applications/
         bot-token = 'YOUR_BOT_TOKEN'
 
+        # Permanent invitation link for the guild
+        invitation = 'https://discordapp.com/invite/qjWANpk'
+
         # Home guild id of the bot
         # The bot will leave all other guilds on login
         home-guild = '600328651124506625'
@@ -21,9 +24,6 @@
     
     # Base color used in rich embeds (hex for #ffcc00)
     baseColor = 16763904
-
-    # Name of the bot
-    name = 'seeleft.de'
 
     # Command settings
     [settings.command]
