@@ -21,27 +21,38 @@
  * SOFTWARE.
  */
 
-import { User, PermissionString, TextChannel } from 'discord.js'
+import Path from 'path'
+import Lodash from 'lodash'
+import {GuildMember, Message, MessageMentions, PermissionString, TextChannel, User} from 'discord.js'
+import {Log} from '../main'
 
 export class CommandExecutor {
 
-    private readonly $user: User
+    private readonly $member: GuildMember
 
     private readonly $channel: TextChannel
 
-    constructor(user: User, channel: TextChannel) {
-        this.$user = user
-        this.$channel = channel
+    private readonly $mentions: MessageMentions
+
+    constructor(message: Message) {
+        this.$member = message.member
+        this.$channel = message.channel as TextChannel
+        this.$mentions = message.mentions
     }
 
-    user = (): User => this.$user
+    member = (): GuildMember => this.$member
+
+    user = (): User => this.$member.user
 
     channel = (): TextChannel => this.$channel
+
+    mentions = (): MessageMentions => this.$mentions
 
 }
 
 export class CommandMeta {
 
+    // noinspection JSMismatchedCollectionQueryUpdate
     private readonly $alias: Array<string>
 
     private readonly $description?: string
@@ -61,9 +72,70 @@ export class CommandMeta {
 
     permission = (): PermissionString | undefined => this.$permission
 
+    permitted = (member: GuildMember): boolean => (this.$permission ? member.hasPermission(this.$permission) : true)
+
     description = (): string | undefined => this.$description
 
     usage = (): string | undefined => this.$usage
+
+}
+
+export class CommandHandler {
+
+    private static readonly TAG: string = `[${Path.basename(__dirname)}/${Path.basename(__filename)}]`
+
+    private readonly $commands: Array<AbstractCommand>
+
+    private readonly $prefix: string
+
+    constructor(commands: Array<AbstractCommand>, prefix: string) {
+        this.$commands = commands
+        this.$prefix = prefix
+    }
+
+    handle = (message: Message): boolean => {
+        // split message in its components
+        let content: Array<string> = message.cleanContent.toLowerCase().trim().split(/\s/)
+        // check for prefix
+        if (!content[0].startsWith(this.$prefix)) {
+            // message is no command
+            Log.debug(`${CommandHandler.TAG} Ignored message from ${message.author.tag} without prefix (${this.$prefix}) in #${message.channel.id}.`)
+            return false
+        }
+        // extract name of the command
+        const name: string = content[0].substring(this.$prefix.length)
+        // check for empty command
+        if ('' === name) {
+            Log.debug(`${CommandHandler.TAG} Ignored empty command from ${message.author.tag} in ${message.channel.id}.`)
+            return true
+        }
+        // remove command from arguments array
+        content.shift()
+        // lookup command
+        const hits: Array<AbstractCommand> = Lodash.filter(this.$commands, command => command.meta().alias().includes(name))
+        // check if no commands hit the query
+        if (0 === hits.length)
+        // command does not exist
+            message.channel.send(`<@${message.author.id}>\nIch konnte leider keinen Befehl mit dem Namen "${name}" finden.\nDu kannst versuchen mit \`${this.$prefix}help\` eine Liste aller verfügbaren Befehle zu listen.`)
+        else {
+            // extract first command from array
+            const command: AbstractCommand = hits[0]
+            // check for permissions
+            if (!command.meta().permitted(message.member))
+                message.channel.send(`<@${message.author.id}>\nDieser Befehl ist höheren Rollen vorenthalten.`)
+            else {
+                const result: boolean = command.execute(new CommandExecutor(message), content)
+                // send usage on failure
+                if (!result)
+                    message.channel.send(`<@${message.author.id}>\nFalsche Verwendung. Beispiel: \`${this.$prefix}${name}${command.meta().usage() ? ` ${command.meta().usage()}` : ''}\``)
+            }
+        }
+        return true
+    }
+
+    commands = (): Array<AbstractCommand> => this.$commands
+
+    prefix = (): string => this.$prefix
 
 }
 

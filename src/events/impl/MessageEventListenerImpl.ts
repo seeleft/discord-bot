@@ -21,15 +21,15 @@
  * SOFTWARE.
  */
 
+import {Message} from 'discord.js'
+import {argv, commandHandler, config, Log} from '../../main'
 import IEventListener from '../IEventListener'
-import { Message } from 'discord.js'
-import { Log } from '../../main'
 
 export default class MessageEventListenerImpl implements IEventListener<Message> {
 
     name = (): string => 'message'
 
-    run(result: Message): void {
+    run = (result: Message): void => {
         // stop if author of the message is a bot
         if (result.author.bot) {
             Log.debug(`Ignored message from bot ${result.author.tag} in #${result.channel.id}.`)
@@ -40,7 +40,14 @@ export default class MessageEventListenerImpl implements IEventListener<Message>
             Log.debug(`Ignored message from ${result.author.tag} in ${result.channel.type}-channel #${result.channel.id}.`)
             return
         }
-
+        // stop if bot is in debug-mode and author of the message is no bot owner
+        if (argv.get('debug') && !config.services.discord.owner.includes(result.author.id)) {
+            Log.debug(`Ignored message from ${result.author.tag} in #${result.channel.id} for not being a bot owner.`)
+            return
+        }
+        // handle commands
+        if (!commandHandler.handle(result)) {
+            // todo handle normal chat message
+        }
     }
-
 }

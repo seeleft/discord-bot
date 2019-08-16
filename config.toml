@@ -15,3 +15,19 @@
         # Owners of the bot
         # Note: in debug mode the bot will only listen to the users defined below
         owner = ['319083113235873793', '561134116716806155']
+
+# General settings
+[settings]
+    
+    # Base color used in rich embeds (hex for #ffcc00)
+    baseColor = 16763904
+
+    # Name of the bot
+    name = 'seeleft.de'
+
+    # Command settings
+    [settings.command]
+
+        # Prefix of commands
+        # WARNING: use only lowercase
+        prefix = 's!'

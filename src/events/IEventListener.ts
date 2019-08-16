@@ -25,7 +25,7 @@ export default interface IEventListener<TResult> {
 
     // name of the listener to hook
     name(): string
-    
+
     run(result: TResult): void
 
 }
