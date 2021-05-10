@@ -28,7 +28,7 @@
   "dependencies": {
     "discord.js": "^11.5.1",
     "exit-hook": "^2.2.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.21",
     "moment": "^2.24.0",
     "mongodb": "^3.3.0",
     "toml": "^3.0.0",
